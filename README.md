@@ -2,7 +2,7 @@
 ```
 tinymuduo网络库
 Reactor多线程模型
-运行Linux操作系统，依赖Linux系统调用和C++标准库
+运行于Linux操作系统，依赖Linux系统调用和C++标准库
 ```
 安装
 ```
