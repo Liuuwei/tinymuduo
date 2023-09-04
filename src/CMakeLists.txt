@@ -1,0 +1,16 @@
+add_library(WebServer
+        Thread.cc
+        Acceptor.cc
+        Buffer.cc
+        Channel.cc
+        EventLoop.cc
+        InetAddr.cc
+        Poll.cc
+        TcpConnection.cc
+        TcpServer.cc
+        ThreadPoll.cc
+        Log.cc
+        TcpClient.cc
+        Connector.cc
+        CircularQueue.cc
+)
