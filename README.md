@@ -6,7 +6,7 @@ Reactor多线程模型
 ```
 安装
 ```
-mkdie build
+mkdir build
 cd build
 cmake ..
 make
