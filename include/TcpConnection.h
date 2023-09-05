@@ -18,18 +18,17 @@ public:
     void setWriteCallback(const MessageCallback& cb);
     void setIp(const std::string& ip);
     int send(const std::string& msg);
-    int fd() const { return channel_.fd(); }
-    Channel* channel() { return &channel_; }
+    int fd() const { return channel_->fd(); }
     EventLoop* loop() const { return loop_; }
     void handleClose();
 private:
     EventLoop* loop_;
-    Channel channel_;
+    std::shared_ptr<Channel> channel_;
     Buffer inputBuffer_;
     Buffer outputBuffer_;
     std::string ip_;
-    void handleRead();
-    void handleWrite();
+    void readCallback();
+    void writeCallback();
     MessageCallback readCallback_;
     MessageCallback writeCallback_;
 };

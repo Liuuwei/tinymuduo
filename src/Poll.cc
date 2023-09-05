@@ -17,6 +17,7 @@ void Poll::poll() {
     int ret = epoll_wait(epollFd_, &*events_.begin(), events_.size(), -1);
     if (ret == -1) {
         Log::Instance()->DEBUG("epoll_wait is -1");
+        return;
     }
     fillActiveChannel(ret);
 }
@@ -27,38 +28,44 @@ void Poll::fillActiveChannel(int ret) {
         std::string event;
         if (events_[i].events | EPOLLIN) event += "EPOLLIN ";
         if (events_[i].events | EPOLLOUT) event += "EPOLLOUT";
-        Log::Instance()->LOG("ip: %s events: %s", channelMaps_[fd]->ip().c_str(), event.c_str());
-        channelMaps_[fd]->setRevents(events_[i].events);
-        activeChannels_.push_back(channelMaps_[fd]);
+        Log::Instance()->LOG("ip: %s events: %s", channelMaps_[fd].lock()->ip().c_str(), event.c_str());
+        auto channel = channelMaps_[fd].lock();
+        if (channel) {
+            channel->setRevents(events_[i].events);
+            activeChannels_.push_back(channel);
+        }
     }
     for (auto& activeChannel : activeChannels_) {
-        activeChannel->handleEvent();
-        activeChannel->unableRevents(activeChannel->revents());
+        auto channel = activeChannel.lock();
+        if (channel) {
+            channel->executeIO();
+            channel->unableRevents(channel->revents());
+        }
     }
     activeChannels_.clear();
 }
 
-void Poll::removeActiveChannel(Channel* channel) {
-
-}
-
-void Poll::updateChannel(Channel* channel) {
+void Poll::updateChannel(std::shared_ptr<Channel> channel) {
     if (!channelMaps_.count(channel->fd())) {
         channelMaps_[channel->fd()] = channel;
         update(EPOLL_CTL_ADD, channel);
     } else {
-        update(EPOLL_CTL_MOD, channel);
+        if (channel->events() == 0) {
+            removeChannel(channel);
+        } else {
+            update(EPOLL_CTL_MOD, channel);
+        }
     }
 }
 
-void Poll::removeChannel(Channel* channel) {
+void Poll::removeChannel(std::shared_ptr<Channel> channel) {
     if (channelMaps_.find(channel->fd()) != channelMaps_.end()) {
         channelMaps_.erase(channel->fd());
     }
     update(EPOLL_CTL_DEL, channel);
 }
 
-void Poll::update(int operation, Channel* channel) const {
+void Poll::update(int operation, std::shared_ptr<Channel> channel) const {
     int fd = channel->fd();
     epoll_event event{};
     event.data.fd = fd;

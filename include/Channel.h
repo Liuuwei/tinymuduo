@@ -4,10 +4,11 @@
 #include <functional>
 #include <sys/epoll.h>
 #include <string>
+#include <memory>
 
 class EventLoop;
 
-class Channel {
+class Channel : public std::enable_shared_from_this<Channel> {
 public:
     Channel(EventLoop* loop_, int fd);
     ~Channel();
@@ -29,18 +30,24 @@ public:
     void setWriteCallback(std::function<void()> cb);
     void setRevents(int events);
     void unableRevents(int events);
-    void handleEvent();
+    void executeIO();
     void shutdown();
     void setIp(const std::string& ip);
     std::string ip() const { return ip_; }
+    bool operator <(const Channel& other) const {
+        return fd_ < other.fd_;
+    }
+    bool operator ==(const Channel& other) const {
+        return fd_ == other.fd_;
+    }
 private:
     int fd_;
     int events_;
     int revents_;
     EventLoop* loop_;
     std::string ip_;
-    std::function<void()> readCallback = nullptr;
-    std::function<void()> writeCallback = nullptr;
+    std::function<void()> readCallback_ = nullptr;
+    std::function<void()> writeCallback_ = nullptr;
     void update();
 };
 

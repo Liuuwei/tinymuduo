@@ -1,4 +1,4 @@
-add_library(WebServer
+add_library(tinymuduo
         Thread.cc
         Acceptor.cc
         Buffer.cc

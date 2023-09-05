@@ -21,21 +21,22 @@ public:
     ~EventLoop();
     void loop();
     void runInLoop(Functor cb);
-    void updateInLoop(Channel* channel);
+    void updateInLoop(std::shared_ptr<Channel> channel);
     pid_t LoopThreadId() const {
         return threadId_;
     }
     void runEvery(int time, std::function<void()> cb);
     void clear();
-    CircularQueue<Bucket>& connectionQueue() { return connectionQueue_; }
-    std::unordered_map<int, std::weak_ptr<TcpConnection>>& tcpConnections() { return tcpConnections_; }
+    CircularQueue<Bucket> connectionQueue();
+    std::unordered_map<int, std::weak_ptr<TcpConnection>> tcpConnections();
+    void insertNewConnection(const std::shared_ptr<TcpConnection>& conn);
 private:
     Poll poll_;
     pid_t threadId_;
     std::mutex funMutex_;
     std::mutex tcpMutex_;
     int wakeUpFd_;
-    Channel wakeUpChannel_;
+    std::shared_ptr<Channel> wakeUpChannel_;
     std::vector<Functor> functors_;
     std::unordered_map<int, std::weak_ptr<TcpConnection>> tcpConnections_;
     std::function<void()> timerCallback_;
@@ -44,7 +45,7 @@ private:
     void wakeUp() const;
     void doFunctors();
     int everyFd_;
-    Channel everyChannel_;
+    std::shared_ptr<Channel> everyChannel_;
     CircularQueue<Bucket> connectionQueue_;
 };
 

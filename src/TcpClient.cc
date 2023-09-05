@@ -29,8 +29,10 @@ bool TcpClient::connect() {
     }
     writeConn_ = std::make_shared<TcpConnection>(loop_, fd_, ip_);
     writeConn_->setWriteCallback(writeCallback_);
+    writeConn_->start();
     readConn_ = std::make_shared<TcpConnection>(threadPoll_.getOneLoop(), fd_, ip_);
     readConn_->setReadCallback(readCallback_);
+    readConn_->start();
     if (onGetConnection_) {
         onGetConnection_(writeConn_);
     }
@@ -39,9 +41,6 @@ bool TcpClient::connect() {
 
 int TcpClient::send(const std::string& msg) {
     int n = writeConn_->send(msg);
-    if (n == -1) {
-        Log::Instance()->DEBUG("send -1 exit(0)");
-    }
     return n;
 }
 

@@ -1,6 +1,5 @@
 #include "Channel.h"
 #include "EventLoop.h"
-#include "Util.h"
 
 Channel::Channel(EventLoop* loop, int fd) : fd_(fd), events_(0), revents_(0), loop_(loop) {
     
@@ -39,25 +38,24 @@ void Channel::unableRevents(int events) {
 }
 
 void Channel::update() {
-    loop_->updateInLoop(this);
+    loop_->updateInLoop(shared_from_this());
 }
 
 void Channel::setReadCallback(std::function<void()> cb) {
-    readCallback = cb;
+    readCallback_ = cb;
 }
 void Channel::setWriteCallback(std::function<void()> cb) {
-    writeCallback = cb;
+    writeCallback_ = cb;
 }
 
-
-void Channel::handleEvent() {
+void Channel::executeIO() {
     if (revents_ & EPOLLIN) {
-        if (readCallback)
-            readCallback();
+        if (readCallback_)
+            readCallback_();
     }
     if (revents_ & EPOLLOUT) {
-        if (writeCallback)
-            writeCallback();
+        if (writeCallback_)
+            writeCallback_();
     }
 }
 

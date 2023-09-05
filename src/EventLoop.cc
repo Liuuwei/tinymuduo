@@ -6,12 +6,12 @@
 #include <sys/timerfd.h>
 
 EventLoop::EventLoop() : threadId_(gettid()),
-                         wakeUpFd_(eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)), wakeUpChannel_(this, wakeUpFd_),
-                         everyFd_(timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK)), everyChannel_(this, everyFd_),
+                         wakeUpFd_(eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC)), wakeUpChannel_(std::make_shared<Channel>(this, wakeUpFd_)),
+                         everyFd_(timerfd_create(CLOCK_REALTIME, TFD_NONBLOCK)), everyChannel_(std::make_shared<Channel>(this, everyFd_)),
                          connectionQueue_(8) {
-    wakeUpChannel_.setReadCallback(std::bind(&EventLoop::handleRead, this));
-    wakeUpChannel_.enableRead();
-    poll_.updateChannel(&wakeUpChannel_);
+    wakeUpChannel_->setReadCallback([this] { handleRead(); });
+    wakeUpChannel_->enableRead();
+    poll_.updateChannel(wakeUpChannel_);
 }
 
 EventLoop::~EventLoop() {
@@ -33,11 +33,11 @@ void EventLoop::runInLoop(Functor cb) {
     }
 }
 
-void EventLoop::updateInLoop(Channel* channel) {
+void EventLoop::updateInLoop(std::shared_ptr<Channel> channel) {
     if (isInLoopThread()) {
         poll_.updateChannel(channel);
     } else {
-        runInLoop(std::bind(&Poll::updateChannel, &poll_, channel));
+        runInLoop([ObjectPtr = &poll_, channel] { ObjectPtr->updateChannel(channel); });
     }
 }
 
@@ -70,17 +70,33 @@ void EventLoop::runEvery(int time, std::function<void()> cb) {
     timer.it_interval.tv_sec = time;
     timer.it_value.tv_sec = time;
     timerfd_settime(everyFd_, 0, &timer, nullptr);
-    everyChannel_.setReadCallback([this, cb]() {
+    everyChannel_->setReadCallback([this, cb]() {
         uint64_t one;
         int n = read(this->everyFd_, &one, sizeof(one));
         if (cb) {
             cb();
         }
     });
-    everyChannel_.enableRead();
-    updateInLoop(&everyChannel_);
+    everyChannel_->enableRead();
+    updateInLoop(everyChannel_);
 }
 
 void EventLoop::clear() {
     connectionQueue_.push(Bucket());
+}
+
+CircularQueue<std::unordered_set<std::shared_ptr<TcpConnection>>> EventLoop::connectionQueue() {
+    std::lock_guard lock(tcpMutex_);
+    return connectionQueue_;
+}
+
+std::unordered_map<int, std::weak_ptr<TcpConnection>> EventLoop::tcpConnections() {
+    std::lock_guard lock(tcpMutex_);
+    return tcpConnections_;
+}
+
+void EventLoop::insertNewConnection(const std::shared_ptr<TcpConnection> &conn) {
+    std::lock_guard lock(tcpMutex_);
+    connectionQueue_.back().insert(conn);
+    tcpConnections_.emplace(conn->fd(), conn);
 }

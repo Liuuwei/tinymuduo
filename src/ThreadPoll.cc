@@ -1,5 +1,4 @@
 #include "ThreadPoll.h"
-#include "Util.h"
 #include "EventLoop.h"
 
 ThreadPoll::ThreadPoll(int nums, EventLoop* loop) : mark_(0), nums_(nums), threads_(nums), loops_(nums), sem_(0), loop_(loop){

@@ -21,7 +21,7 @@ public:
     typedef std::unordered_set<std::shared_ptr<TcpConnection>> Bucket;
     typedef std::function<void(const std::shared_ptr<TcpConnection>&, Buffer*)> MessageCallback;
 public:
-    TcpServer(EventLoop* loop, InetAddr addr);
+    TcpServer(EventLoop* loop, const InetAddr& addr);
     ~TcpServer();
     void start();
     void closeNagle() { nagle_ = false;}
@@ -35,7 +35,7 @@ private:
     Acceptor acceptor_;
     int listenFd_;
     int threadNums_;
-    Channel* listenChannel_;
+    std::shared_ptr<Channel> listenChannel_;
     MessageCallback onMessageCallback_;
     std::function<void(const std::shared_ptr<TcpConnection>&)> onConnection_;
     std::vector<std::weak_ptr<TcpConnection>> tcpConnections_;
