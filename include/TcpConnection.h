@@ -21,6 +21,7 @@ public:
     int fd() const { return channel_->fd(); }
     EventLoop* loop() const { return loop_; }
     void handleClose();
+    void setMaxBytes(int bytes) { maxBytes_ = bytes; }
 private:
     EventLoop* loop_;
     std::shared_ptr<Channel> channel_;
@@ -31,6 +32,7 @@ private:
     void writeCallback();
     MessageCallback readCallback_;
     MessageCallback writeCallback_;
+    int maxBytes_;
 };
 
 #endif

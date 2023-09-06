@@ -37,7 +37,7 @@ void EventLoop::updateInLoop(std::shared_ptr<Channel> channel) {
     if (isInLoopThread()) {
         poll_.updateChannel(channel);
     } else {
-        runInLoop([ObjectPtr = &poll_, channel] { ObjectPtr->updateChannel(channel); });
+        runInLoop([this, channel]() { poll_.updateChannel(channel); });
     }
 }
 
@@ -85,11 +85,6 @@ void EventLoop::clear() {
     connectionQueue_.push(Bucket());
 }
 
-CircularQueue<std::unordered_set<std::shared_ptr<TcpConnection>>> EventLoop::connectionQueue() {
-    std::lock_guard lock(tcpMutex_);
-    return connectionQueue_;
-}
-
 std::unordered_map<int, std::weak_ptr<TcpConnection>> EventLoop::tcpConnections() {
     std::lock_guard lock(tcpMutex_);
     return tcpConnections_;
@@ -99,4 +94,9 @@ void EventLoop::insertNewConnection(const std::shared_ptr<TcpConnection> &conn) 
     std::lock_guard lock(tcpMutex_);
     connectionQueue_.back().insert(conn);
     tcpConnections_.emplace(conn->fd(), conn);
+}
+
+void EventLoop::inertToTimeWheel(std::shared_ptr<TcpConnection> conn) {
+    std::lock_guard lock(tcpMutex_);
+    connectionQueue_.back().insert(conn);
 }

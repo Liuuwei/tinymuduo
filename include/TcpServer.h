@@ -30,6 +30,7 @@ public:
     void setOnConnection(const std::function<void(const std::shared_ptr<TcpConnection>&)>& cb);
     std::vector<EventLoop*>& loops() { return loops_; }
     std::vector<std::weak_ptr<TcpConnection>>& tcpConnections() { return tcpConnections_; }
+    void setMaxBytes(int bytes) { maxBytes_ = bytes; }
 private:
     EventLoop* loop_;
     Acceptor acceptor_;
@@ -44,6 +45,7 @@ private:
     std::vector<EventLoop*> loops_;
     void newTcpConnection();
     bool nagle_;
+    int maxBytes_;
 };
 
 #endif

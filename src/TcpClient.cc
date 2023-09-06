@@ -27,12 +27,19 @@ bool TcpClient::connect() {
         int flag = 1;
         setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
     }
+
     writeConn_ = std::make_shared<TcpConnection>(loop_, fd_, ip_);
     writeConn_->setWriteCallback(writeCallback_);
-    writeConn_->start();
-    readConn_ = std::make_shared<TcpConnection>(threadPoll_.getOneLoop(), fd_, ip_);
+    loop_->insertNewConnection(writeConn_);
+
+    auto loop = threadPoll_.getOneLoop();
+    readConn_ = std::make_shared<TcpConnection>(loop, fd_, ip_);
     readConn_->setReadCallback(readCallback_);
+    loop->insertNewConnection(readConn_);
+
     readConn_->start();
+    writeConn_->start();
+
     if (onGetConnection_) {
         onGetConnection_(writeConn_);
     }

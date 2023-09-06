@@ -70,7 +70,6 @@ int Buffer::readFd(int fd) {
         return -1;
     }
     if (n > writeAble) {
-        std::cout << n << " " << writeAble << std::endl;
         writeIndex_ = buffer_.size();
         append(std::string(extraBuf, n - writeAble));
     } else {

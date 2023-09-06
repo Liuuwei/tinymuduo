@@ -30,6 +30,7 @@ public:
     CircularQueue<Bucket> connectionQueue();
     std::unordered_map<int, std::weak_ptr<TcpConnection>> tcpConnections();
     void insertNewConnection(const std::shared_ptr<TcpConnection>& conn);
+    void inertToTimeWheel(std::shared_ptr<TcpConnection> conn);
 private:
     Poll poll_;
     pid_t threadId_;

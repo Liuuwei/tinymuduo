@@ -7,7 +7,9 @@
 
 TcpServer::TcpServer(EventLoop* loop, const InetAddr& addr) : loop_(loop), listenFd_(addr.listenFd()),
                                                         listenChannel_(std::make_shared<Channel>(loop, listenFd_)),
-                                                        threadNums_(0), threadPoll_(nullptr), nagle_(true) {
+                                                        threadNums_(0), threadPoll_(nullptr), nagle_(true),
+                                                        maxBytes_(INT_MAX)
+                                                        {
     signal(SIGPIPE, SIG_IGN);
     acceptor_.setListenFd(listenFd_);
 }
@@ -57,6 +59,7 @@ void TcpServer::newTcpConnection() {
     }
     auto loop = threadPoll_->getOneLoop();
     std::shared_ptr<TcpConnection> conn = std::make_shared<TcpConnection>(loop, fd, tcp.second);
+    loop->inertToTimeWheel(conn);
     loop->insertNewConnection(conn);
     conn->setReadCallback(onMessageCallback_);
     conn->start();
