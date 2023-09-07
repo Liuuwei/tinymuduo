@@ -4,7 +4,6 @@ build
 cmake-build-aa
 cmake-build-debug
 cmake-build-para
-test
 www
 lib
 auto.sh
