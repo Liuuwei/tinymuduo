@@ -10,6 +10,10 @@ mkdir build
 cd build
 cmake ..
 make
+头文件在inlude目录
+库文件在lib目录
+
+示例代码:test/
 ```
 更新日志
 ```
