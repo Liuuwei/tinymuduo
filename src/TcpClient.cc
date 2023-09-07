@@ -9,8 +9,8 @@
 
 TcpClient::TcpClient(EventLoop* loop, std::string ip, int port) : loop_(loop), connector_(ip, port),
                                                               threadPoll_(1, loop_), nagle_(true) {
+    Log::Instance()->close();
     signal(SIGPIPE, SIG_IGN);
-
 }
 
 TcpClient::~TcpClient() {
