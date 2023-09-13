@@ -33,12 +33,10 @@ void TcpConnection::readCallback() {
     loop_->inertToTimeWheel(shared_from_this());
     ssize_t n = inputBuffer_.readFd(channel_->fd());
     if (n == 0) {
-        Log::Instance()->DEBUG(": %s readFd is 0", ip_.c_str());
         handleClose();
         return;
     }
     if (n == -1) {
-        Log::Instance()->DEBUG(": %s readFd is -1", ip_.c_str());
         if (errno != EAGAIN || errno != EWOULDBLOCK)
             handleClose();
         return;
@@ -62,7 +60,8 @@ void TcpConnection::writeCallback() {
     }
     ssize_t n = outputBuffer_.writeFd(channel_->fd());
     if (n == -1) {
-        Log::Instance()->DEBUG("%s: writeFd is -1", ip_.c_str());
+        handleClose();
+        return;
     }
     if (n == sendAble) {
         if (writeCallback_)
@@ -82,7 +81,6 @@ int TcpConnection::send(const std::string& msg) {
     ssize_t sendAble = outputBuffer_.readAbleBytes();
     ssize_t n = outputBuffer_.writeFd(channel_->fd());
     if (n == -1) {
-        Log::Instance()->DEBUG("%s: send is -1", ip_.c_str());
         handleClose();
         if (errno != EAGAIN && errno != EWOULDBLOCK) {
             return -1;
@@ -90,7 +88,6 @@ int TcpConnection::send(const std::string& msg) {
             return 0;
         }
     }
-    Log::Instance()->LOG("%s: send %d bytes", ip_.c_str(), n);
     if (n == sendAble) {
         channel_->unableWrite();
         channel_->unableRevents(EPOLLOUT);

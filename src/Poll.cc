@@ -15,10 +15,6 @@ Poll::~Poll() {
 
 void Poll::poll() {
     int ret = epoll_wait(epollFd_, &*events_.begin(), events_.size(), -1);
-    if (ret == -1) {
-        Log::Instance()->DEBUG("epoll_wait is -1");
-        return;
-    }
     fillActiveChannel(ret);
 }
 

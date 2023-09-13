@@ -22,6 +22,11 @@ TcpServer::~TcpServer() {
 }
 
 void TcpServer::start() {
+    if (runEveryFunction_) {
+        loop_->runEvery(runEveryTimes_, [this]() {
+            runEveryFunction_(loop_);
+        });
+    }
     listenChannel_->setReadCallback([this] { newTcpConnection(); });
     listenChannel_->enableRead();
     loop_->updateInLoop(listenChannel_);
@@ -44,9 +49,14 @@ void TcpServer::setThreadNums(int nums) {
     threadPoll_ = new ThreadPoll(threadNums_, loop_);
     loops_.reserve(nums);
     for (int i = 0; i < nums; i++) {
-        loops_.push_back(threadPoll_->getOneLoop());
+        auto loop = threadPoll_->getOneLoop();
+        if (runEveryFunction_) {
+            loop->runEvery(runEveryTimes_, [this, loop]() {
+                runEveryFunction_(loop);
+            });
+        }
+        loops_.push_back(loop);
     }
-    loops_.push_back(loop_);
 }
 
 void TcpServer::newTcpConnection() {
@@ -67,4 +77,9 @@ void TcpServer::newTcpConnection() {
     if (onConnection_) {
         onConnection_(conn);
     }
+}
+
+void TcpServer::runEvery(int time, std::function<void(EventLoop*)> cb) {
+    runEveryTimes_ = time;
+    runEveryFunction_ = cb;
 }

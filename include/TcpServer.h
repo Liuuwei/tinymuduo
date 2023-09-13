@@ -31,6 +31,7 @@ public:
     std::vector<EventLoop*>& loops() { return loops_; }
     std::vector<std::weak_ptr<TcpConnection>>& tcpConnections() { return tcpConnections_; }
     void setMaxBytes(int bytes) { maxBytes_ = bytes; }
+    void runEvery(int time, std::function<void(EventLoop*)> cb);
 private:
     EventLoop* loop_;
     Acceptor acceptor_;
@@ -46,6 +47,8 @@ private:
     void newTcpConnection();
     bool nagle_;
     int maxBytes_;
+    int runEveryTimes_;
+    std::function<void(EventLoop*)> runEveryFunction_;
 };
 
 #endif
